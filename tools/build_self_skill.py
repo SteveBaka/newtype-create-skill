@@ -6,6 +6,7 @@ import json
 import os
 import re
 import shutil
+import traceback
 import sys
 from typing import Optional
 from datetime import datetime
@@ -18,6 +19,55 @@ from version_manager import backup
 
 def now_iso() -> str:
     return datetime.now().replace(microsecond=0).isoformat()
+
+
+def ensure_dir(path: str):
+    os.makedirs(path, exist_ok=True)
+
+
+def write_json(path: str, data: dict):
+    ensure_dir(os.path.dirname(path) or ".")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+
+def append_text(path: str, content: str):
+    ensure_dir(os.path.dirname(path) or ".")
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(content)
+
+
+def to_display_path(path: str, base_dir: Optional[str] = None) -> str:
+    normalized = os.path.normpath(path)
+    if base_dir:
+        try:
+            return os.path.relpath(normalized, start=os.path.normpath(base_dir))
+        except Exception:
+            pass
+    return normalized
+
+
+def build_runtime_paths(base_dir: str, slug: str):
+    runtime_dir = os.path.join(base_dir, slug, "sources", "runtime")
+    return {
+        "runtime_dir": runtime_dir,
+        "status": os.path.join(runtime_dir, "status.json"),
+        "events": os.path.join(runtime_dir, "events.log"),
+        "error": os.path.join(runtime_dir, "error.md"),
+    }
+
+
+def update_runtime_status(paths: dict, stage: str, status: str, extra: Optional[dict] = None):
+    payload = {
+        "updated_at": now_iso(),
+        "stage": stage,
+        "status": status,
+    }
+    if extra:
+        payload.update(extra)
+    write_json(paths["status"], payload)
+    append_text(paths["events"], f"[{payload['updated_at']}] {status.upper()} {stage}\n")
 
 
 def ensure_skill_dir(base_dir: str, slug: str):
@@ -286,67 +336,161 @@ def main():
     parser.add_argument("--format", default="auto", help="auto/json/html/text")
     args = parser.parse_args()
 
+    runtime_paths = build_runtime_paths(args.base_dir, args.slug)
+    ensure_dir(runtime_paths["runtime_dir"])
+    update_runtime_status(
+        runtime_paths,
+        stage="startup",
+        status="running",
+        extra={
+            "slug": args.slug,
+            "input": args.input,
+            "self_name": args.self_name,
+            "base_dir": args.base_dir,
+            "format": args.format,
+        },
+    )
+
     if not os.path.exists(args.input):
+        update_runtime_status(runtime_paths, stage="startup", status="failed", extra={"reason": "input_missing"})
         print(f"错误：输入文件不存在 {args.input}", file=sys.stderr)
         sys.exit(1)
 
-    skill_dir = ensure_skill_dir(args.base_dir, args.slug)
-    meta_path = os.path.join(skill_dir, "meta.json")
-    old_meta = read_old_meta(meta_path)
-    real_fmt, messages = load_messages(args.input, args.self_name, args.format)
-    stats = extract_style_stats(messages)
+    skill_dir = ""
+    try:
+        update_runtime_status(runtime_paths, stage="prepare_skill_dir", status="running")
+        skill_dir = ensure_skill_dir(args.base_dir, args.slug)
+        meta_path = os.path.join(skill_dir, "meta.json")
+        old_meta = read_old_meta(meta_path)
+        update_runtime_status(runtime_paths, stage="prepare_skill_dir", status="ok", extra={"skill_dir": skill_dir})
 
-    copied_source = copy_source(args.input, skill_dir)
-    parsed_json_path = os.path.join(skill_dir, "sources", "chat", "parsed_messages.json")
-    parsed_md_path = os.path.join(skill_dir, "sources", "chat", "analysis.md")
-
-    with open(parsed_json_path, "w", encoding="utf-8") as f:
-        json.dump({"format": real_fmt, "messages": messages, "stats": stats}, f, ensure_ascii=False, indent=2)
-
-    report_lines = [
-        f"# 构建分析 — {args.self_name}",
-        "",
-        f"- 输入文件：{args.input}",
-        f"- 已复制到：{copied_source}",
-        f"- 检测格式：{real_fmt}",
-        f"- self 消息数：{stats.get('self_message_count', 0)}",
-        f"- 平均长度：{stats.get('avg_length', 0)}",
-        "",
-        "## 候选发送者",
-        "",
-    ]
-    for item in stats.get("sender_candidates", []):
-        report_lines.append(
-            f"- {item['sender']} | 条数: {item['count']} | 主要判定: {item['top_role']} | 占比: {item['top_role_ratio']}"
+        update_runtime_status(runtime_paths, stage="parse_messages", status="running")
+        real_fmt, messages = load_messages(args.input, args.self_name, args.format)
+        stats = extract_style_stats(messages)
+        update_runtime_status(
+            runtime_paths,
+            stage="parse_messages",
+            status="ok",
+            extra={
+                "source_format": real_fmt,
+                "message_count": len(messages),
+                "self_message_count": stats.get("self_message_count", 0),
+            },
         )
-    report_lines.extend(["", "## Self 样本", ""])
-    for idx, sample in enumerate(unique_keep_order(stats.get("samples", [])[:20]), 1):
-        report_lines.append(f"{idx}. {sample}")
-    report_lines.append("")
-    write_text(parsed_md_path, "\n".join(report_lines))
 
-    meta = {
-        "name": args.name or args.slug,
-        "slug": args.slug,
-        "self_name": args.self_name,
-        "self_variant": args.self_variant,
-        "style_summary": args.style_summary,
-        "source_format": real_fmt,
-        "source_file": os.path.basename(args.input),
-        "self_message_count": stats.get("self_message_count", 0),
-        "avg_length": stats.get("avg_length", 0),
-        "version": next_version(old_meta),
-        "updated_at": now_iso(),
-    }
+        update_runtime_status(runtime_paths, stage="write_intermediate", status="running")
+        copied_source = copy_source(args.input, skill_dir)
+        parsed_json_path = os.path.join(skill_dir, "sources", "chat", "parsed_messages.json")
+        parsed_md_path = os.path.join(skill_dir, "sources", "chat", "analysis.md")
 
-    write_text(os.path.join(skill_dir, "style.md"), build_style_markdown(meta, stats))
-    write_text(os.path.join(skill_dir, "persona.md"), build_persona_markdown(stats))
-    write_text(os.path.join(skill_dir, "examples.md"), build_examples_markdown(stats))
-    write_text(os.path.join(skill_dir, "corrections.md"), "# Corrections\n\n- 暂无纠错记录。\n")
-    write_text(meta_path, json.dumps(meta, ensure_ascii=False, indent=2) + "\n")
+        write_json(parsed_json_path, {"format": real_fmt, "messages": messages, "stats": stats})
 
-    combine_skill(args.base_dir, args.slug)
-    print(f"构建完成：{os.path.join(skill_dir, 'SKILL.md')}")
+        display_input = to_display_path(args.input)
+        display_copied_source = to_display_path(copied_source)
+
+        report_lines = [
+            f"# 构建分析 — {args.self_name}",
+            "",
+            f"- 输入文件：{display_input}",
+            f"- 已复制到：./{display_copied_source}",
+            f"- 检测格式：{real_fmt}",
+            f"- self 消息数：{stats.get('self_message_count', 0)}",
+            f"- 平均长度：{stats.get('avg_length', 0)}",
+            "",
+            "## 候选发送者",
+            "",
+        ]
+        for item in stats.get("sender_candidates", []):
+            report_lines.append(
+                f"- {item['sender']} | 条数: {item['count']} | 主要判定: {item['top_role']} | 占比: {item['top_role_ratio']}"
+            )
+        report_lines.extend(["", "## Self 样本", ""])
+        for idx, sample in enumerate(unique_keep_order(stats.get("samples", [])[:20]), 1):
+            report_lines.append(f"{idx}. {sample}")
+        report_lines.append("")
+        write_text(parsed_md_path, "\n".join(report_lines))
+        update_runtime_status(
+            runtime_paths,
+            stage="write_intermediate",
+            status="ok",
+            extra={"analysis_path": parsed_md_path, "parsed_json_path": parsed_json_path},
+        )
+
+        update_runtime_status(runtime_paths, stage="write_skill_files", status="running")
+        meta = {
+            "name": args.name or args.slug,
+            "slug": args.slug,
+            "self_name": args.self_name,
+            "self_variant": args.self_variant,
+            "style_summary": args.style_summary,
+            "source_format": real_fmt,
+            "source_file": os.path.basename(args.input),
+            "self_message_count": stats.get("self_message_count", 0),
+            "avg_length": stats.get("avg_length", 0),
+            "version": next_version(old_meta),
+            "updated_at": now_iso(),
+        }
+
+        write_text(os.path.join(skill_dir, "style.md"), build_style_markdown(meta, stats))
+        write_text(os.path.join(skill_dir, "persona.md"), build_persona_markdown(stats))
+        write_text(os.path.join(skill_dir, "examples.md"), build_examples_markdown(stats))
+        write_text(os.path.join(skill_dir, "corrections.md"), "# Corrections\n\n- 暂无纠错记录。\n")
+        write_text(meta_path, json.dumps(meta, ensure_ascii=False, indent=2) + "\n")
+
+        combine_skill(args.base_dir, args.slug)
+        update_runtime_status(
+            runtime_paths,
+            stage="write_skill_files",
+            status="ok",
+            extra={
+                "meta_path": meta_path,
+                "skill_path": os.path.join(skill_dir, "SKILL.md"),
+                "version": meta["version"],
+            },
+        )
+        update_runtime_status(runtime_paths, stage="completed", status="ok")
+        print(f"构建完成：{os.path.join(skill_dir, 'SKILL.md')}")
+    except Exception as exc:
+        error_stage = "unknown"
+        if os.path.exists(runtime_paths["status"]):
+            try:
+                with open(runtime_paths["status"], "r", encoding="utf-8") as f:
+                    current = json.load(f)
+                error_stage = current.get("stage", "unknown")
+            except Exception:
+                pass
+        update_runtime_status(
+            runtime_paths,
+            stage=error_stage,
+            status="failed",
+            extra={
+                "error_type": exc.__class__.__name__,
+                "error_message": str(exc),
+            },
+        )
+        error_report = "\n".join([
+            "# 构建失败",
+            "",
+            f"- 时间：{now_iso()}",
+            f"- 阶段：{error_stage}",
+            f"- 类型：{exc.__class__.__name__}",
+            f"- 错误：{str(exc)}",
+            "",
+            "## Traceback",
+            "",
+            "```text",
+            traceback.format_exc().rstrip(),
+            "```",
+            "",
+            "## 排查建议",
+            "",
+            "- 先查看 `sources/runtime/status.json`，确认卡在哪个阶段。",
+            "- 如果 `sources/chat/parsed_messages.json` 已生成，说明解析阶段已完成，问题更可能在 skill 合成或写文件阶段。",
+            "- 如果连 `sources/chat/analysis.md` 都没有生成，优先检查输入文件路径、格式与 self-name。",
+        ])
+        write_text(runtime_paths["error"], error_report)
+        print(f"构建失败，详情见 {runtime_paths['error']}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

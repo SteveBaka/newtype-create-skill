@@ -1,0 +1,191 @@
+{
+  "format": "text",
+  "messages": [
+    {
+      "timestamp": "2026-04-01 09:00",
+      "sender": "阿明",
+      "speaker": "other",
+      "content": "中午吃啥",
+      "source": "text",
+      "confidence": 0.84,
+      "signals": [
+        "timestamp_sender_pattern"
+      ]
+    },
+    {
+      "timestamp": "2026-04-01 09:01",
+      "sender": "我",
+      "speaker": "self",
+      "content": "都行啊",
+      "source": "text",
+      "confidence": 0.84,
+      "signals": [
+        "timestamp_sender_pattern"
+      ]
+    },
+    {
+      "timestamp": "2026-04-01 09:02",
+      "sender": "阿明",
+      "speaker": "other",
+      "content": "那火锅？",
+      "source": "text",
+      "confidence": 0.84,
+      "signals": [
+        "timestamp_sender_pattern"
+      ]
+    },
+    {
+      "timestamp": "2026-04-01 09:03",
+      "sender": "我",
+      "speaker": "self",
+      "content": "也不是不行",
+      "source": "text",
+      "confidence": 0.84,
+      "signals": [
+        "timestamp_sender_pattern"
+      ]
+    },
+    {
+      "timestamp": "2026-04-01 09:10",
+      "sender": "小周",
+      "speaker": "other",
+      "content": "晚上还来吗",
+      "source": "text",
+      "confidence": 0.84,
+      "signals": [
+        "timestamp_sender_pattern"
+      ]
+    },
+    {
+      "timestamp": "2026-04-01 09:11",
+      "sender": "我",
+      "speaker": "self",
+      "content": "看情况，晚点说",
+      "source": "text",
+      "confidence": 0.84,
+      "signals": [
+        "timestamp_sender_pattern"
+      ]
+    },
+    {
+      "timestamp": "2026-04-01 09:12",
+      "sender": "阿明",
+      "speaker": "other",
+      "content": "你昨天怎么睡那么晚",
+      "source": "text",
+      "confidence": 0.84,
+      "signals": [
+        "timestamp_sender_pattern"
+      ]
+    },
+    {
+      "timestamp": "2026-04-01 09:13",
+      "sender": "我",
+      "speaker": "self",
+      "content": "别提了哈哈",
+      "source": "text",
+      "confidence": 0.84,
+      "signals": [
+        "timestamp_sender_pattern"
+      ]
+    },
+    {
+      "timestamp": "2026-04-01 09:14",
+      "sender": "我",
+      "speaker": "self",
+      "content": "搞东西搞忘了",
+      "source": "text",
+      "confidence": 0.84,
+      "signals": [
+        "timestamp_sender_pattern"
+      ]
+    },
+    {
+      "timestamp": "2026-04-01 09:20",
+      "sender": "小周",
+      "speaker": "other",
+      "content": "这周末去不去",
+      "source": "text",
+      "confidence": 0.84,
+      "signals": [
+        "timestamp_sender_pattern"
+      ]
+    },
+    {
+      "timestamp": "2026-04-01 09:21",
+      "sender": "我",
+      "speaker": "self",
+      "content": "可以啊",
+      "source": "text",
+      "confidence": 0.84,
+      "signals": [
+        "timestamp_sender_pattern"
+      ]
+    },
+    {
+      "timestamp": "2026-04-01 09:22",
+      "sender": "我",
+      "speaker": "self",
+      "content": "别太早",
+      "source": "text",
+      "confidence": 0.84,
+      "signals": [
+        "timestamp_sender_pattern"
+      ]
+    }
+  ],
+  "stats": {
+    "message_roles": {
+      "other": 5,
+      "self": 7
+    },
+    "self_message_count": 7,
+    "sender_candidates": [
+      {
+        "sender": "我",
+        "count": 7,
+        "top_role": "self",
+        "top_role_ratio": 1.0
+      },
+      {
+        "sender": "阿明",
+        "count": 3,
+        "top_role": "other",
+        "top_role_ratio": 1.0
+      },
+      {
+        "sender": "小周",
+        "count": 2,
+        "top_role": "other",
+        "top_role_ratio": 1.0
+      }
+    ],
+    "avg_length": 4.6,
+    "top_particles": [
+      [
+        "啊",
+        2
+      ],
+      [
+        "哈哈",
+        1
+      ]
+    ],
+    "top_emojis": [],
+    "punctuation": {
+      "question": 0,
+      "exclaim": 0,
+      "ellipsis": 0,
+      "tilde": 0
+    },
+    "samples": [
+      "都行啊",
+      "也不是不行",
+      "看情况，晚点说",
+      "别提了哈哈",
+      "搞东西搞忘了",
+      "可以啊",
+      "别太早"
+    ]
+  }
+}

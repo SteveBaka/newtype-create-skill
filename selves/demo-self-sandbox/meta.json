@@ -1,0 +1,13 @@
+{
+  "name": "演示人格",
+  "slug": "demo-self-sandbox",
+  "self_name": "我",
+  "self_variant": "日常聊天时的我",
+  "style_summary": "短句、自然、会顺手接话",
+  "source_format": "text",
+  "source_file": "minimal_chat.txt",
+  "self_message_count": 7,
+  "avg_length": 4.6,
+  "version": "v1",
+  "updated_at": "2026-04-16T12:47:25"
+}
