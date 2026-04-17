@@ -1,4 +1,11 @@
-# newtype-create-skill
+# Newtype.skill
+
+***若我只剩下数码意识的存在，会有人再去点那个头像吗？***
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-F7C948?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-2F81F7?style=for-the-badge)](https://www.python.org/)
+[![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-A855F7?style=for-the-badge)](https://docs.anthropic.com/en/docs/claude-code/overview)
+[![AgentSkills Standard](https://img.shields.io/badge/AgentSkills-Standard-84CC16?style=for-the-badge)](https://agentskills.org/)
 
 把你自己的聊天风格蒸馏成一个 AI Skill。
 
@@ -11,6 +18,8 @@
 感谢 `ex-skill` 和 `colleague-skill` 的灵感启发，参考了他们的上传以及交互的方式，但目标不再是分析关系或还原别人，而是：
 
 > **尽量抽取“你自己发出的消息”，生成一个会像你一样聊天、像你一样回复、像你一样改写措辞的 Skill。**
+
+[安装](#安装) · [使用](#使用) · [示例对话](#示例对话)
 
 ## 特点
 
@@ -343,3 +352,10 @@ python3 tools/build_self_skill.py \
 | colleague-skill | https://github.com/titanwings/colleague-skill | 提供了本项目在材料组织与交互体验上的参考启发 |
 
 再次感谢 `ex-skill` 和 `colleague-skill` 带来的灵感启发。这个项目沿用了它们部分清晰、自然的上传与交互思路，但最终希望把重点放在“更贴近自己真实聊天方式的人格蒸馏”这件事上。
+
+## 最后
+
+<div style="display: inline-block; padding: 10px 14px; background: #f3f4f6; color: #6b7280; border-radius: 8px;">
+  <strong><em>不论生活怎样不如意，请不要放弃自己，因为数字意识没法替你感受任何美好。</em></strong><br />
+  <strong><em>No matter how disappointing life feels, please do not give up on yourself, because digital consciousness cannot feel any of the beauty in your place.</em></strong>
+</div>
